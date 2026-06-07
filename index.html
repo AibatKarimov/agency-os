@@ -1772,7 +1772,7 @@ ${pendingList||'все задачи выполнены'}
 - Отвечай кратко и по делу, на русском языке
 - Суммы всегда в тенге (₸)
 - Никогда не отказывайся добавлять задачи — ты умеешь это делать
-- ВАЖНО: JSON пиши БЕЗ markdown-блоков (без тройных кавычек ```), просто голый JSON`;
+- ВАЖНО: JSON пиши без markdown-обёртки, просто голый JSON без обратных кавычек вокруг него`;
 }
 
 async function sendAI(){
@@ -1852,7 +1852,7 @@ async function sendAI(){
             S('tasks',tasks);
             if(currentPage==='tasks')renderTasks();
             if(currentPage==='overview')renderOverview();
-            const cleanReply=reply.replace(/```json[\s\S]*?```/g,'').replace(/\{[\s\S]*?\}/s,'').trim();
+            const cleanReply=reply.replace(/```json[\s\S]*?```/g,'').replace(/\{[\s\S]*?\}/,'').trim();
             addAIMsg('assistant',(cleanReply||`Добавил ${added} задач${added===1?'у':added<5?'и':''} ✓`));
             notify(`Добавлено задач: ${added}`);
             btn.disabled=false;return;
