@@ -1572,5 +1572,215 @@ updateMonthLabel();
 renderOverview();
 setInterval(setDate,60000);
 </script>
+
+<!-- AI CHAT -->
+<style>
+.ai-btn{position:fixed;bottom:28px;right:28px;width:52px;height:52px;border-radius:50%;background:var(--text);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,0,0,0.18);z-index:300;transition:all 0.2s;font-size:22px}
+.ai-btn:hover{transform:scale(1.08);background:#2c2926}
+.ai-panel{position:fixed;bottom:92px;right:28px;width:380px;max-width:calc(100vw - 40px);background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.14);z-index:300;display:none;flex-direction:column;overflow:hidden;max-height:560px}
+.ai-panel.open{display:flex}
+.ai-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--surface)}
+.ai-header-left{display:flex;align-items:center;gap:10px}
+.ai-avatar{width:30px;height:30px;border-radius:50%;background:var(--text);display:flex;align-items:center;justify-content:center;font-size:14px}
+.ai-title{font-size:14px;font-weight:500}
+.ai-subtitle{font-size:11px;color:var(--text3)}
+.ai-close{background:none;border:none;cursor:pointer;color:var(--text3);font-size:18px;padding:2px 6px;border-radius:4px}
+.ai-close:hover{background:var(--surface2)}
+.ai-messages{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;min-height:200px}
+.ai-msg{max-width:85%;font-size:13px;line-height:1.5;padding:9px 12px;border-radius:12px}
+.ai-msg.user{background:var(--text);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.ai-msg.assistant{background:var(--surface2);color:var(--text);align-self:flex-start;border-bottom-left-radius:4px}
+.ai-msg.thinking{color:var(--text3);font-style:italic;background:none;padding-left:4px}
+.ai-suggestions{padding:8px 14px;display:flex;gap:6px;flex-wrap:wrap;border-top:1px solid var(--border)}
+.ai-sug{font-size:11px;padding:4px 10px;border:1px solid var(--border);border-radius:10px;background:none;cursor:pointer;color:var(--text2);font-family:var(--font);transition:all 0.15s;white-space:nowrap}
+.ai-sug:hover{background:var(--surface2);border-color:var(--border2);color:var(--text)}
+.ai-input-row{padding:10px 12px;border-top:1px solid var(--border);display:flex;gap:8px;align-items:flex-end}
+.ai-input{flex:1;border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-family:var(--font);font-size:13px;resize:none;outline:none;max-height:100px;line-height:1.4;color:var(--text);background:var(--surface)}
+.ai-input:focus{border-color:var(--border2)}
+.ai-send{width:34px;height:34px;border-radius:50%;background:var(--text);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s}
+.ai-send:hover{background:#2c2926}
+.ai-send:disabled{opacity:0.4;cursor:default}
+.ai-key-warn{padding:12px 14px;font-size:12px;color:var(--amber);background:var(--amber-bg);border-radius:8px;margin:10px;line-height:1.5}
+.ai-key-warn a{color:var(--amber);font-weight:500}
+</style>
+
+<button class="ai-btn" onclick="toggleAI()" title="ИИ-помощник">✦</button>
+<div class="ai-panel" id="aiPanel">
+  <div class="ai-header">
+    <div class="ai-header-left">
+      <div class="ai-avatar">✦</div>
+      <div>
+        <div class="ai-title">ИИ-помощник</div>
+        <div class="ai-subtitle">Agency OS Assistant</div>
+      </div>
+    </div>
+    <button class="ai-close" onclick="toggleAI()">✕</button>
+  </div>
+  <div class="ai-messages" id="aiMessages">
+    <div class="ai-msg assistant">Привет! Я знаю все твои проекты, задачи и финансы. Могу добавлять задачи, отвечать на вопросы по данным, помогать с текстами. Что нужно?</div>
+  </div>
+  <div class="ai-suggestions" id="aiSuggestions">
+    <button class="ai-sug" onclick="aiQuick('Добавь задачи на сегодня по всем проектам')">+ Задачи на сегодня</button>
+    <button class="ai-sug" onclick="aiQuick('Сколько я заработал в этом месяце?')">💰 Доход за месяц</button>
+    <button class="ai-sug" onclick="aiQuick('Какие задачи ещё не выполнены?')">📋 Невыполненные</button>
+    <button class="ai-sug" onclick="aiQuick('Составь план на неделю по проектам')">📅 План на неделю</button>
+  </div>
+  <div class="ai-input-row">
+    <textarea class="ai-input" id="aiInput" placeholder="Напиши задачу или вопрос..." rows="1"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAI()}"
+      oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea>
+    <button class="ai-send" id="aiSendBtn" onclick="sendAI()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    </button>
+  </div>
+</div>
+
+<script>
+// ── AI CONFIG ──────────────────────────────────────────────────────────────
+const AI_KEY = 'YOUR_API_KEY_HERE'; // <- сюда вставь свой ключ
+
+let aiOpen=false;
+let aiHistory=[];
+
+function toggleAI(){
+  aiOpen=!aiOpen;
+  document.getElementById('aiPanel').classList.toggle('open',aiOpen);
+  if(aiOpen)document.getElementById('aiInput').focus();
+}
+
+function aiQuick(text){
+  document.getElementById('aiInput').value=text;
+  sendAI();
+}
+
+function getAppContext(){
+  refreshProjects();
+  const tasks=S('tasks')||[];
+  const today=todayStr();
+  const t=getMonthTotals();
+  const mp=S('monthStatus')||{};
+  const thisMonth=mp[selectedMonth]||{};
+
+  const projectsSummary=PROJECTS.map(p=>{
+    const d=getProjData(p.id);
+    const st=getMonthStatus(p.id);
+    return `- ${p.name}: гонорар ${fmt(d.fee)}₸ (${st.feeStatus==='paid'?'оплачено':'ожидается'})${d.budget?', бюджет '+fmt(d.budget)+'₸':''}`;
+  }).join('\n');
+
+  const todayTasks=tasks.filter(t2=>t2.dueDate===today||(!t2.dueDate&&t2.repeat));
+  const doneTodayCount=todayTasks.filter(t2=>t2.done).length;
+  const pendingTasks=tasks.filter(t2=>!t2.done&&(t2.dueDate===today||t2.repeat))
+    .map(t2=>`- [${t2.done?'x':' '}] ${t2.text} (${pname(t2.project)})`)
+    .slice(0,10).join('\n');
+
+  const oneTime=getOneTime();
+  const oneTimeSummary=oneTime.length?oneTime.map(p=>`- ${p.label}: ${fmt(p.amount)}₸ (${p.status==='paid'?'получено':'ожидается'})`).join('\n'):'нет';
+
+  return `Ты — умный ассистент внутри приложения Agency OS для таргетолога.
+
+ТЕКУЩАЯ ДАТА: ${today}
+ВЫБРАННЫЙ МЕСЯЦ: ${selectedMonth}
+
+ПРОЕКТЫ (${PROJECTS.length}):
+${projectsSummary}
+
+ФИНАНСЫ ЗА ${selectedMonth}:
+- Гонораров получено: ${fmt(t.feePaid)}₸ из ${fmt(t.fee)}₸
+- Ожидается всего: ${fmt(t.totalPending)}₸
+- Разовые оплаты: ${oneTimeSummary}
+
+ЗАДАЧИ СЕГОДНЯ (${doneTodayCount}/${todayTasks.length} выполнено):
+${pendingTasks||'все выполнены'}
+
+ИНСТРУКЦИИ:
+- Если пользователь просит добавить задачи — верни JSON в формате:
+  {"action":"add_tasks","tasks":[{"project":"id_проекта","text":"текст","priority":"normal|urgent|today","time":"HH:MM или пусто"}]}
+- Проекты и их id: ${PROJECTS.map(p=>p.id+'='+p.name).join(', ')}
+- Если не нужно действие — просто отвечай текстом
+- Отвечай кратко и по делу, на русском языке`;
+}
+
+async function sendAI(){
+  if(AI_KEY==='YOUR_API_KEY_HERE'){
+    addAIMsg('assistant','⚠️ Сначала вставь API ключ в файл. Открой index.html в текстовом редакторе, найди YOUR_API_KEY_HERE и замени на свой ключ с console.anthropic.com');
+    return;
+  }
+  const input=document.getElementById('aiInput');
+  const text=input.value.trim();
+  if(!text)return;
+
+  input.value='';
+  input.style.height='auto';
+  addAIMsg('user',text);
+  aiHistory.push({role:'user',content:text});
+
+  const btn=document.getElementById('aiSendBtn');
+  btn.disabled=true;
+  const thinking=addAIMsg('thinking','Думаю...');
+
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':AI_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        system:getAppContext(),
+        messages:aiHistory
+      })
+    });
+    const data=await resp.json();
+    thinking.remove();
+
+    if(data.error){addAIMsg('assistant','Ошибка: '+data.error.message);btn.disabled=false;return;}
+
+    const reply=data.content[0].text;
+    aiHistory.push({role:'assistant',content:reply});
+
+    // Try to parse action
+    try{
+      const jsonMatch=reply.match(/\{[\s\S]*"action"[\s\S]*\}/);
+      if(jsonMatch){
+        const action=JSON.parse(jsonMatch[0]);
+        if(action.action==='add_tasks'&&action.tasks){
+          const tasks=S('tasks')||[];
+          let added=0;
+          action.tasks.forEach(t=>{
+            const projId=PROJECTS.find(p=>p.id===t.project||p.name.toLowerCase().includes(t.project.toLowerCase()))?.id||PROJECTS[0].id;
+            tasks.unshift({id:uid(),project:projId,text:t.text,done:false,
+              priority:t.priority||'normal',time:t.time||'',
+              repeat:false,created:todayStr(),dueDate:todayStr()});
+            added++;
+          });
+          S('tasks',tasks);
+          if(currentPage==='tasks')renderTasks();
+          if(currentPage==='overview')renderOverview();
+          const cleanReply=reply.replace(/\{[\s\S]*\}/,'').trim();
+          addAIMsg('assistant',(cleanReply||`Добавил ${added} задач${added===1?'у':added<5?'и':''}`) + ' ✓');
+          notify(`Добавлено задач: ${added}`);
+          btn.disabled=false;return;
+        }
+      }
+    }catch(e){}
+
+    addAIMsg('assistant',reply);
+  }catch(e){
+    thinking.remove();
+    addAIMsg('assistant','Ошибка соединения. Проверь интернет.');
+  }
+  btn.disabled=false;
+}
+
+function addAIMsg(role,text){
+  const msgs=document.getElementById('aiMessages');
+  const div=document.createElement('div');
+  div.className='ai-msg '+role;
+  div.textContent=text;
+  msgs.appendChild(div);
+  msgs.scrollTop=msgs.scrollHeight;
+  return div;
+}
+</script>
+
 </body>
 </html>
