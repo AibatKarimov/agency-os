@@ -1614,7 +1614,7 @@ setInterval(setDate,60000);
         <div class="ai-subtitle">Agency OS Assistant</div>
       </div>
     </div>
-    <button class="ai-close" onclick="toggleAI()">✕</button>
+    <div style="display:flex;gap:4px"><button onclick="showKeySetup()" title="Сменить ключ" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:13px;padding:3px 8px;border-radius:4px">🔑</button><button class="ai-close" onclick="toggleAI()">✕</button></div>
   </div>
   <div class="ai-messages" id="aiMessages">
     <div class="ai-msg assistant">Привет! Я знаю все твои проекты, задачи и финансы. Могу добавлять задачи, отвечать на вопросы по данным, помогать с текстами. Что нужно?</div>
@@ -1637,7 +1637,7 @@ setInterval(setDate,60000);
 
 <script>
 // ── AI CONFIG ──────────────────────────────────────────────────────────────
-const AI_KEY = 'YOUR_API_KEY_HERE'; // <- сюда вставь свой ключ
+const AI_KEY = localStorage.getItem('ai_key')||''
 
 let aiOpen=false;
 let aiHistory=[];
@@ -1701,10 +1701,7 @@ ${pendingTasks||'все выполнены'}
 }
 
 async function sendAI(){
-  if(AI_KEY==='YOUR_API_KEY_HERE'){
-    addAIMsg('assistant','⚠️ Сначала вставь API ключ в файл. Открой index.html в текстовом редакторе, найди YOUR_API_KEY_HERE и замени на свой ключ с console.anthropic.com');
-    return;
-  }
+  if(!AI_KEY){showKeySetup();return;}
   const input=document.getElementById('aiInput');
   const text=input.value.trim();
   if(!text)return;
