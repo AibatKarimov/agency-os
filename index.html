@@ -1,0 +1,1576 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agency OS — Таргет менеджер</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600&family=Unbounded:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#F7F5F0;
+  --surface:#FFFFFF;
+  --surface2:#F0EDE6;
+  --border:#E5E0D8;
+  --border2:#D0C8BC;
+  --text:#1A1714;
+  --text2:#6B6560;
+  --text3:#9E9890;
+  --accent:#1A6B3C;
+  --accent-bg:#E8F5EE;
+  --accent2:#B85C1A;
+  --accent2-bg:#FDF0E8;
+  --blue:#1A4F8A;
+  --blue-bg:#E8F0FA;
+  --red:#C0392B;
+  --red-bg:#FDECEB;
+  --amber:#8A6A1A;
+  --amber-bg:#FDF5E0;
+  --purple:#5A1A8A;
+  --purple-bg:#F0E8FD;
+  --r:10px;
+  --r-sm:6px;
+  --shadow:0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md:0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+  --font:'Onest',sans-serif;
+  --font-display:'Unbounded',sans-serif;
+}
+
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;display:flex;font-size:15px;line-height:1.5}
+
+/* SIDEBAR */
+.sidebar{width:240px;min-height:100vh;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;position:fixed;top:0;left:0;height:100%}
+.sidebar-logo{padding:20px 20px 16px;border-bottom:1px solid var(--border)}
+.sidebar-logo h1{font-family:var(--font-display);font-size:15px;font-weight:600;letter-spacing:-0.3px;color:var(--text)}
+.sidebar-logo p{font-size:12px;color:var(--text3);margin-top:2px}
+.sidebar-nav{padding:12px 8px;flex:1}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--r-sm);cursor:pointer;color:var(--text2);font-size:14px;font-weight:400;transition:all 0.15s;user-select:none;border:none;background:none;width:100%;text-align:left}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:var(--accent-bg);color:var(--accent);font-weight:500}
+.nav-item svg{width:17px;height:17px;flex-shrink:0;opacity:0.7}
+.nav-item.active svg{opacity:1}
+.sidebar-footer{padding:12px 8px;border-top:1px solid var(--border)}
+.sidebar-date{padding:8px 12px;font-size:12px;color:var(--text3)}
+
+/* MONTH SWITCHER */
+.month-switcher{display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:5px 8px;box-shadow:var(--shadow)}
+.month-btn{width:26px;height:26px;border:none;background:none;cursor:pointer;color:var(--text2);border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;transition:all 0.15s;font-size:14px}
+.month-btn:hover{background:var(--surface2);color:var(--text)}
+.month-label{font-size:13px;font-weight:500;min-width:110px;text-align:center;color:var(--text);cursor:pointer;padding:2px 4px;border-radius:var(--r-sm)}
+.month-label:hover{background:var(--surface2)}
+.month-indicator{font-size:11px;color:var(--accent);background:var(--accent-bg);padding:1px 7px;border-radius:8px;font-weight:500}
+
+/* EDITABLE AMOUNT */
+.amount-edit{cursor:pointer;border-bottom:1px dashed var(--border2);transition:all 0.15s}
+.amount-edit:hover{border-bottom-color:var(--accent);color:var(--accent)}
+.amount-inline-input{font-family:var(--font-display);font-size:inherit;font-weight:inherit;letter-spacing:inherit;color:var(--accent);background:var(--accent-bg);border:1px solid var(--accent);border-radius:4px;padding:1px 6px;outline:none;width:140px}
+
+/* HISTORY SECTION */
+.history-tabs{display:flex;gap:6px;margin-bottom:16px}
+.hist-tab{padding:5px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface);font-size:13px;color:var(--text2);cursor:pointer;transition:all 0.15s;font-family:var(--font)}
+.hist-tab:hover{border-color:var(--border2);color:var(--text)}
+.hist-tab.active{background:var(--text);color:#fff;border-color:var(--text)}
+.month-archive{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:14px;box-shadow:var(--shadow)}
+.month-archive-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;cursor:pointer}
+.month-archive-title{font-size:15px;font-weight:500}
+.month-archive-meta{display:flex;gap:12px;font-size:13px;color:var(--text2)}
+.month-archive-body{border-top:1px solid var(--border);padding-top:12px}
+
+/* MAIN */
+.main{margin-left:240px;flex:1;padding:32px 36px;max-width:960px}
+.page{display:none}
+.page.active{display:block}
+
+/* PAGE HEADER */
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}
+.page-title{font-family:var(--font-display);font-size:22px;font-weight:500;letter-spacing:-0.5px}
+
+/* OVERVIEW STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;box-shadow:var(--shadow)}
+.stat-label{font-size:12px;color:var(--text3);margin-bottom:8px;line-height:1.3}
+.stat-value{font-size:26px;font-weight:600;font-family:var(--font-display);letter-spacing:-1px;color:var(--accent)}
+.stat-value.amber{color:var(--accent2)}
+
+.overview-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;box-shadow:var(--shadow)}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.card-title{font-size:14px;font-weight:500;color:var(--text2)}
+.card-icon{color:var(--text3)}
+.card-icon svg{width:16px;height:16px}
+
+/* PROJECT LIST */
+.project-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
+.project-row:last-child{border-bottom:none;padding-bottom:0}
+.project-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.project-name{flex:1;font-size:14px;color:var(--text)}
+.project-amount{font-size:14px;font-weight:500;color:var(--accent)}
+
+/* TASKS */
+.tasks-filter{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.filter-btn{padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface);font-size:13px;color:var(--text2);cursor:pointer;transition:all 0.15s;font-family:var(--font)}
+.filter-btn:hover{border-color:var(--border2);color:var(--text)}
+.filter-btn.active{background:var(--text);color:#fff;border-color:var(--text)}
+
+.tasks-section{margin-bottom:24px}
+.tasks-section-header{display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.tasks-section-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.tasks-section-title{font-size:13px;font-weight:500;color:var(--text2)}
+.tasks-count{font-size:12px;color:var(--text3);background:var(--surface2);padding:1px 7px;border-radius:10px}
+
+.task-item{display:flex;align-items:flex-start;gap:12px;padding:11px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);margin-bottom:6px;transition:all 0.15s;cursor:pointer}
+.task-item:hover{border-color:var(--border2);box-shadow:var(--shadow)}
+.task-item.done{opacity:0.5}
+.task-item.done .task-text{text-decoration:line-through;color:var(--text3)}
+.task-checkbox{width:17px;height:17px;border-radius:50%;border:1.5px solid var(--border2);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;margin-top:1px}
+.task-checkbox.checked{background:var(--accent);border-color:var(--accent)}
+.task-checkbox.checked::after{content:'';width:5px;height:8px;border:1.5px solid #fff;border-top:none;border-left:none;transform:rotate(45deg) translate(-1px,-1px)}
+.task-content{flex:1;min-width:0}
+.task-text{font-size:14px;color:var(--text);line-height:1.4}
+.task-meta{display:flex;align-items:center;gap:8px;margin-top:4px}
+.task-project{font-size:12px;color:var(--text3)}
+.task-badge{font-size:11px;padding:2px 8px;border-radius:10px;font-weight:500}
+.badge-urgent{background:var(--red-bg);color:var(--red)}
+.badge-today{background:var(--amber-bg);color:var(--amber)}
+.badge-time{background:var(--surface2);color:var(--text2)}
+.badge-done{background:var(--accent-bg);color:var(--accent)}
+.badge-repeat{background:var(--blue-bg);color:var(--blue)}
+.task-actions{display:flex;gap:6px;flex-shrink:0}
+.task-del{padding:3px 6px;border:none;background:none;cursor:pointer;color:var(--text3);border-radius:4px;font-size:12px;transition:all 0.15s}
+.task-del:hover{background:var(--red-bg);color:var(--red)}
+
+/* ADD TASK */
+.add-task-bar{display:flex;gap:10px;margin-bottom:24px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;box-shadow:var(--shadow)}
+.add-task-bar input,.add-task-bar select{font-family:var(--font);font-size:14px;border:none;outline:none;background:none;color:var(--text)}
+.add-task-bar input{flex:1}
+.add-task-bar input::placeholder{color:var(--text3)}
+.add-task-bar select{color:var(--text2);cursor:pointer}
+.add-task-bar button{background:var(--text);color:#fff;border:none;border-radius:var(--r-sm);padding:6px 14px;font-size:13px;font-family:var(--font);font-weight:500;cursor:pointer;transition:all 0.15s}
+.add-task-bar button:hover{background:#2c2926}
+
+/* FINANCES */
+.fin-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:24px}
+.client-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;box-shadow:var(--shadow)}
+.client-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.client-name{font-size:15px;font-weight:500;display:flex;align-items:center;gap:8px}
+.client-status{font-size:12px;padding:3px 9px;border-radius:10px;font-weight:500}
+.status-paid{background:var(--accent-bg);color:var(--accent)}
+.status-pending{background:var(--amber-bg);color:var(--amber)}
+.status-overdue{background:var(--red-bg);color:var(--red)}
+.client-amount{font-size:22px;font-weight:600;font-family:var(--font-display);letter-spacing:-0.5px;margin-bottom:4px;color:var(--text)}
+.client-date{font-size:12px;color:var(--text3)}
+.client-actions{display:flex;gap:8px;margin-top:12px}
+.btn-sm{padding:5px 12px;font-size:12px;font-family:var(--font);border-radius:var(--r-sm);cursor:pointer;transition:all 0.15s;font-weight:500}
+.btn-outline{background:none;border:1px solid var(--border);color:var(--text2)}
+.btn-outline:hover{border-color:var(--border2);color:var(--text)}
+.btn-accent{background:var(--accent);color:#fff;border:1px solid var(--accent)}
+.btn-accent:hover{background:#155c32}
+.btn-danger{background:none;border:1px solid var(--red-bg);color:var(--red)}
+.btn-danger:hover{background:var(--red-bg)}
+
+/* FINANCES SUMMARY */
+.fin-summary{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:24px;box-shadow:var(--shadow)}
+.fin-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)}
+.fin-row:last-child{border-bottom:none}
+.fin-row-label{font-size:14px;color:var(--text2)}
+.fin-row-value{font-size:14px;font-weight:500}
+
+/* DOCUMENTS */
+.doc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:28px}
+.doc-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;box-shadow:var(--shadow);cursor:pointer;transition:all 0.15s}
+.doc-card:hover{border-color:var(--accent);box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.doc-icon{width:36px;height:36px;border-radius:var(--r-sm);background:var(--surface2);display:flex;align-items:center;justify-content:center;margin-bottom:10px}
+.doc-icon svg{width:18px;height:18px;color:var(--text2)}
+.doc-name{font-size:14px;font-weight:500;margin-bottom:4px}
+.doc-desc{font-size:12px;color:var(--text3);line-height:1.4}
+
+.doc-generator{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:24px;box-shadow:var(--shadow);display:none}
+.doc-generator.visible{display:block}
+.doc-generator h3{font-size:16px;font-weight:500;margin-bottom:16px}
+.form-group{margin-bottom:14px}
+.form-label{font-size:12px;color:var(--text2);margin-bottom:6px;display:block;font-weight:500}
+.form-control{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--r-sm);font-family:var(--font);font-size:14px;color:var(--text);background:var(--surface);outline:none;transition:border 0.15s}
+.form-control:focus{border-color:var(--accent)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.doc-preview{margin-top:20px;padding:16px;background:var(--bg);border-radius:var(--r-sm);border:1px solid var(--border);font-size:13px;white-space:pre-wrap;line-height:1.7;color:var(--text2);max-height:280px;overflow-y:auto;font-family:monospace}
+.btn-group{display:flex;gap:10px;margin-top:16px}
+.btn{padding:8px 18px;border-radius:var(--r-sm);font-family:var(--font);font-size:14px;font-weight:500;cursor:pointer;border:none;transition:all 0.15s}
+.btn-primary{background:var(--text);color:#fff}
+.btn-primary:hover{background:#2c2926}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover{background:var(--border)}
+
+/* LINKS */
+.links-add{display:flex;gap:10px;margin-bottom:20px}
+.links-add input{flex:1;padding:9px 12px;border:1px solid var(--border);border-radius:var(--r-sm);font-family:var(--font);font-size:14px;color:var(--text);background:var(--surface);outline:none}
+.links-add input:focus{border-color:var(--accent)}
+.links-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.link-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;box-shadow:var(--shadow);display:flex;align-items:flex-start;gap:12px;transition:all 0.15s}
+.link-card:hover{border-color:var(--border2);box-shadow:var(--shadow-md)}
+.link-favicon{width:32px;height:32px;border-radius:var(--r-sm);background:var(--surface2);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px}
+.link-info{flex:1;min-width:0}
+.link-title{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
+.link-url{font-size:12px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.link-project{font-size:11px;padding:2px 7px;border-radius:8px;background:var(--surface2);color:var(--text3);margin-top:4px;display:inline-block}
+.link-del{background:none;border:none;color:var(--text3);cursor:pointer;padding:2px 5px;border-radius:4px;font-size:13px;flex-shrink:0}
+.link-del:hover{background:var(--red-bg);color:var(--red)}
+
+/* REMINDERS */
+.remind-add{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;margin-bottom:20px;box-shadow:var(--shadow)}
+.remind-add h3{font-size:14px;font-weight:500;margin-bottom:14px;color:var(--text2)}
+.remind-form{display:grid;grid-template-columns:1fr auto auto auto;gap:10px;align-items:end}
+.remind-list{display:flex;flex-direction:column;gap:8px}
+.remind-item{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;box-shadow:var(--shadow);transition:all 0.15s}
+.remind-item.fired{border-left:3px solid var(--accent2);background:var(--accent2-bg)}
+.remind-icon{width:34px;height:34px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.remind-icon.bell{background:var(--blue-bg)}
+.remind-icon.bell svg{color:var(--blue);width:16px;height:16px}
+.remind-icon.fire{background:var(--red-bg)}
+.remind-icon.fire svg{color:var(--red);width:16px;height:16px}
+.remind-text{flex:1}
+.remind-title{font-size:14px;font-weight:500}
+.remind-when{font-size:12px;color:var(--text3);margin-top:2px}
+.remind-del{background:none;border:none;color:var(--text3);cursor:pointer;padding:4px 7px;border-radius:4px}
+.remind-del:hover{background:var(--red-bg);color:var(--red)}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;z-index:100;opacity:0;pointer-events:none;transition:opacity 0.2s}
+.modal-overlay.open{opacity:1;pointer-events:auto}
+.modal{background:var(--surface);border-radius:var(--r);padding:24px;width:440px;max-width:92vw;box-shadow:var(--shadow-md);transform:translateY(8px);transition:transform 0.2s}
+.modal-overlay.open .modal{transform:translateY(0)}
+.modal h3{font-size:16px;font-weight:500;margin-bottom:16px}
+.modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}
+
+/* TAGS */
+.tag-urgent{background:var(--red-bg);color:var(--red)}
+.tag-today{background:var(--amber-bg);color:var(--amber)}
+.tag-norm{background:var(--surface2);color:var(--text2)}
+
+/* EMPTY STATE */
+.empty{text-align:center;padding:40px 20px;color:var(--text3)}
+.empty svg{width:40px;height:40px;margin:0 auto 12px;opacity:0.3;display:block}
+.empty p{font-size:14px}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* NOTIFICATION */
+.notif{position:fixed;bottom:24px;right:24px;background:var(--text);color:#fff;padding:11px 18px;border-radius:var(--r);font-size:13px;font-weight:500;z-index:200;transform:translateY(20px);opacity:0;transition:all 0.3s;pointer-events:none}
+.notif.show{transform:translateY(0);opacity:1}
+
+svg{vertical-align:middle}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <h1>Agency OS</h1>
+    <p>Таргет менеджер</p>
+  </div>
+  <div class="sidebar-nav">
+    <button class="nav-item active" onclick="navigate('overview')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Главная
+    </button>
+    <button class="nav-item" onclick="navigate('tasks')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      Задачи
+    </button>
+    <button class="nav-item" onclick="navigate('finance')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+      Финансы
+    </button>
+    <button class="nav-item" onclick="navigate('docs')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      Документы
+    </button>
+    <button class="nav-item" onclick="navigate('links')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      Ссылки
+    </button>
+    <button class="nav-item" onclick="navigate('reminders')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      Напоминания
+    </button>
+  </div>
+  </div>
+  <div class="sidebar-footer">
+    <button class="nav-item" onclick="navigate('projects')" style="width:100%">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+      Проекты
+    </button>
+    <div class="sidebar-date" id="sidebarDate"></div>
+  </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<main class="main">
+
+  <!-- OVERVIEW -->
+  <div class="page active" id="page-overview">
+    <div class="page-header">
+      <div style="display:flex;align-items:center;gap:14px">
+        <h2 class="page-title">Обзор</h2>
+        <span id="currentMonthIndicator" class="month-indicator"></span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="font-size:13px;color:var(--text3)" id="overviewDate"></span>
+        <div class="month-switcher">
+          <button class="month-btn" onclick="changeMonth(-1)">&#8249;</button>
+          <span class="month-label" id="monthLabel" onclick="goToCurrentMonth()"></span>
+          <button class="month-btn" onclick="changeMonth(1)">&#8250;</button>
+        </div>
+      </div>
+    </div>
+    <div class="stats-grid" id="statsGrid"></div>
+    <div class="overview-grid">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Проекты</span>
+          <span class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></span>
+        </div>
+        <div id="overviewProjects"></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Задачи на сегодня</span>
+          <span class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
+        </div>
+        <div id="overviewTasks"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TASKS -->
+  <div class="page" id="page-tasks">
+    <div class="page-header">
+      <h2 class="page-title">Задачи</h2>
+      <button class="btn btn-primary" onclick="openAddTask()" style="font-size:13px;padding:8px 16px">+ Добавить задачу</button>
+    </div>
+    <div class="add-task-bar">
+      <input type="text" id="quickTaskInput" placeholder="Быстро добавить задачу..." onkeydown="if(event.key==='Enter')quickAddTask()">
+      <select id="quickTaskProject" style="max-width:160px">
+        <option value="">Все проекты</option>
+      </select>
+      <select id="quickTaskPriority">
+        <option value="normal">Обычная</option>
+        <option value="urgent">Срочно</option>
+        <option value="today">Сегодня</option>
+      </select>
+      <button onclick="quickAddTask()">Добавить</button>
+    </div>
+    <div class="tasks-filter" id="tasksFilter"></div>
+    <div id="tasksList"></div>
+  </div>
+
+  <!-- FINANCE -->
+  <div class="page" id="page-finance">
+    <div class="page-header">
+      <h2 class="page-title">Финансы</h2>
+      <button class="btn btn-primary" onclick="openAddOneTime()" style="font-size:13px;padding:8px 16px">+ Разовая оплата</button>
+    </div>
+    <div class="fin-summary" id="finSummary"></div>
+    <div id="finProjectsSection"></div>
+    <div id="finOneTimeSection"></div>
+  </div>
+
+  <!-- DOCS -->
+  <div class="page" id="page-docs">
+    <div class="page-header">
+      <h2 class="page-title">Документы</h2>
+    </div>
+    <div class="doc-grid">
+      <div class="doc-card" onclick="openDoc('brief')">
+        <div class="doc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+        <div class="doc-name">Бриф проекта</div>
+        <div class="doc-desc">Базовый бриф с целями и аудиторией</div>
+      </div>
+      <div class="doc-card" onclick="openDoc('report')">
+        <div class="doc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+        <div class="doc-name">Отчёт по рекламе</div>
+        <div class="doc-desc">Еженедельный отчёт по результатам</div>
+      </div>
+      <div class="doc-card" onclick="openDoc('contract')">
+        <div class="doc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></div>
+        <div class="doc-name">Договор</div>
+        <div class="doc-desc">Шаблон договора на услуги таргетинга</div>
+      </div>
+      <div class="doc-card" onclick="openDoc('kp')">
+        <div class="doc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
+        <div class="doc-name">Коммерческое предложение</div>
+        <div class="doc-desc">КП для новых клиентов</div>
+      </div>
+      <div class="doc-card" onclick="openDoc('media')">
+        <div class="doc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>
+        <div class="doc-name">Медиаплан</div>
+        <div class="doc-desc">Таблица бюджетов и площадок</div>
+      </div>
+      <div class="doc-card" onclick="openDoc('invoice')">
+        <div class="doc-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        <div class="doc-name">Счёт на оплату</div>
+        <div class="doc-desc">Счёт для отправки клиенту</div>
+      </div>
+    </div>
+    <div class="doc-generator" id="docGenerator"></div>
+  </div>
+
+  <!-- LINKS -->
+  <div class="page" id="page-links">
+    <div class="page-header">
+      <h2 class="page-title">Ссылки</h2>
+    </div>
+    <div class="links-add">
+      <input type="text" id="linkUrl" placeholder="https://..." style="flex:1.5">
+      <input type="text" id="linkTitle" placeholder="Название">
+      <select id="linkProject">
+        <option value="">Без проекта</option>
+      </select>
+      <button class="btn btn-primary" onclick="addLink()">Добавить</button>
+    </div>
+    <div class="tasks-filter" id="linksFilter"></div>
+    <div class="links-grid" id="linksGrid"></div>
+  </div>
+
+  <!-- REMINDERS -->
+  <div class="page" id="page-reminders">
+    <div class="page-header">
+      <h2 class="page-title">Напоминания</h2>
+    </div>
+    <div class="remind-add">
+      <h3>Новое напоминание</h3>
+      <div class="remind-form">
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Текст</label>
+          <input class="form-control" id="remindText" placeholder="Напоминание...">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Дата</label>
+          <input class="form-control" type="date" id="remindDate" style="width:150px">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Время</label>
+          <input class="form-control" type="time" id="remindTime" style="width:110px">
+        </div>
+        <button class="btn btn-primary" onclick="addReminder()" style="margin-top:auto">Добавить</button>
+      </div>
+    </div>
+    <div class="remind-list" id="remindersList"></div>
+  </div>
+
+  <!-- PROJECTS SETTINGS -->
+  <div class="page" id="page-projects">
+    <div class="page-header">
+      <h2 class="page-title">Проекты</h2>
+      <button class="btn btn-primary" onclick="openAddProject()" style="font-size:13px;padding:8px 16px">+ Добавить проект</button>
+    </div>
+    <div id="projectsList"></div>
+  </div>
+
+</main>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<div class="notif" id="notif"></div>
+
+<script>
+const DEFAULT_PROJECTS = [
+  {id:'bast',name:'Bast Transformer',color:'#9B7FDE',amount:120000,payDay:1},
+  {id:'isana',name:'I-sana',color:'#E55A5A',amount:87000,payDay:5},
+  {id:'whoosh',name:'Whoosh',color:'#D4A827',amount:100000,payDay:3},
+  {id:'hunter',name:'Hunter Sales',color:'#E5714A',amount:150000,payDay:7},
+  {id:'reli',name:'Reli Talk',color:'#3BB87A',amount:180000,payDay:2},
+  {id:'adelante',name:'Adelante',color:'#E55A9B',amount:90000,payDay:5},
+  {id:'dream',name:'Dream Travel',color:'#4A90D4',amount:120000,payDay:10}
+];
+// PROJECTS is always read from localStorage so additions persist
+function getProjects(){return S('projects')||DEFAULT_PROJECTS;}
+// Alias used throughout
+let PROJECTS=getProjects();
+function refreshProjects(){PROJECTS=getProjects();}
+
+function S(key,val){if(val!==undefined){localStorage.setItem(key,JSON.stringify(val));return val}try{return JSON.parse(localStorage.getItem(key))}catch{return null}}
+
+// INIT DATA
+function initData(){
+  if(!S('projects'))S('projects',DEFAULT_PROJECTS);
+  else{
+    // ensure payDay field exists on old records
+    const ps=S('projects');
+    let changed=false;
+    ps.forEach(p=>{if(p.payDay===undefined){p.payDay=1;changed=true;}});
+    if(changed)S('projects',ps);
+  }
+  PROJECTS=getProjects();
+  if(!S('tasks')){
+    const today=todayStr();
+    const tasks=[];
+    getProjects().forEach(p=>{
+      tasks.push({id:uid(),project:p.id,text:`Заполнить отчёт по рекламе — ${p.name}`,done:false,priority:'time',time:'10:15',repeat:true,repeatType:'report',created:today,dueDate:today});
+    });
+    tasks.push({id:uid(),project:'reli',text:'Запустить рекламу — Dream Travel',done:false,priority:'today',time:'23:30',repeat:false,created:today,dueDate:today});
+    tasks.push({id:uid(),project:'reli',text:'Интеграция AmoCRM — Reli Talk',done:false,priority:'urgent',time:'',repeat:false,created:today,dueDate:today});
+    tasks.push({id:uid(),project:'whoosh',text:'Реклама с инсты — Whoosh',done:false,priority:'today',time:'',repeat:false,created:today,dueDate:today});
+    S('tasks',tasks);
+  }
+  if(!S('payments')){
+    const payments=PROJECTS.map(p=>({id:uid(),project:p.id,amount:p.amount,status:['paid','pending','pending','paid','pending','overdue','paid'][PROJECTS.indexOf(p)],date:'01.06.2025',note:''}));
+    S('payments',payments);
+  }
+  if(!S('links')){
+    S('links',[
+      {id:uid(),url:'https://ads.vk.com',title:'VK Ads',project:'bast',favicon:'🎯'},
+      {id:uid(),url:'https://business.facebook.com',title:'Meta Business Suite',project:'reli',favicon:'📊'},
+      {id:uid(),url:'https://analytics.google.com',title:'Google Analytics',project:'',favicon:'📈'},
+      {id:uid(),url:'https://notion.so',title:'Notion — Рабочее пространство',project:'',favicon:'📝'}
+    ]);
+  }
+  if(!S('reminders')){
+    S('reminders',[
+      {id:uid(),text:'Сдать отчёт за май по всем клиентам',date:'2025-06-10',time:'10:00',fired:false},
+      {id:uid(),text:'Встреча с Hunter Sales — обсуждение бюджета',date:'2025-06-08',time:'15:00',fired:false}
+    ]);
+  }
+  // Repeat daily tasks
+  checkRepeatTasks();
+}
+
+function checkRepeatTasks(){
+  refreshProjects();
+  const tasks=S('tasks')||[];
+  const today=todayStr();
+  const lastCheck=S('lastRepeatCheck');
+  if(lastCheck===today)return;
+  S('lastRepeatCheck',today);
+  const newTasks=[...tasks];
+  // Daily report tasks
+  PROJECTS.forEach(p=>{
+    const exists=newTasks.find(t=>t.repeat&&t.repeatType==='report'&&t.project===p.id&&t.dueDate===today);
+    if(!exists){
+      newTasks.push({id:uid(),project:p.id,text:`Заполнить отчёт по рекламе — ${p.name}`,done:false,priority:'time',time:'10:15',repeat:true,repeatType:'report',created:today,dueDate:today});
+    }
+  });
+  // Payment reminder tasks — create on payDay of each month
+  syncPaymentTasks(newTasks, today);
+  S('tasks',newTasks);
+}
+
+function syncPaymentTasks(taskArr, today){
+  const[y,m,d]=today.split('-').map(Number);
+  PROJECTS.forEach(p=>{
+    const payDay=p.payDay||1;
+    const payDate=`${y}-${String(m).padStart(2,'0')}-${String(payDay).padStart(2,'0')}`;
+    // Check if fee for this month is already paid
+    const allStatus=S('monthStatus')||{};
+    const month=today.substr(0,7);
+    const st=(allStatus[month]&&allStatus[month][p.id])||{};
+    if(st.feeStatus==='paid')return; // already paid, no reminder needed
+    // Ensure task exists from payDay onward until end of month
+    if(d>=payDay){
+      const exists=taskArr.find(t=>t.repeat&&t.repeatType==='payment'&&t.project===p.id&&t.dueDate===today);
+      if(!exists){
+        taskArr.push({id:uid(),project:p.id,
+          text:`💰 Оплата — ${p.name}`,
+          done:false,priority:'urgent',time:'',
+          repeat:true,repeatType:'payment',
+          created:today,dueDate:today,payDate});
+      }
+    }
+  });
+}
+
+function todayStr(){const d=new Date();return d.toISOString().split('T')[0]}
+function uid(){return Math.random().toString(36).substr(2,9)}
+function pname(id){
+  return (getProjects().find(p=>p.id===id)||((S('archivedProjects')||{})[id])||{name:'Без проекта'}).name;
+}
+function pcolor(id){
+  return (getProjects().find(p=>p.id===id)||((S('archivedProjects')||{})[id])||{color:'#aaa'}).color;
+}
+// Get project by id including archived (for finance history)
+function anyProject(id){
+  return getProjects().find(p=>p.id===id)||((S('archivedProjects')||{})[id])||null;
+}
+
+function notify(msg){const n=document.getElementById('notif');n.textContent=msg;n.classList.add('show');setTimeout(()=>n.classList.remove('show'),2500)}
+
+// NAVIGATION
+let currentPage='overview';
+let tasksFilter='all';
+let linksFilter='all';
+
+function navigate(page){
+  document.querySelectorAll('.nav-item').forEach((el,i)=>{
+    const pages=['overview','tasks','finance','docs','links','reminders','projects'];
+    el.classList.toggle('active',pages[i]===page);
+  });
+  document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  currentPage=page;
+  render();
+}
+
+function render(){
+  if(currentPage==='overview')renderOverview();
+  if(currentPage==='tasks')renderTasks();
+  if(currentPage==='finance')renderFinance();
+  if(currentPage==='docs')renderDocs();
+  if(currentPage==='links')renderLinks();
+  if(currentPage==='reminders')renderReminders();
+  if(currentPage==='projects')renderProjectsPage();
+}
+
+// DATE
+function setDate(){
+  const d=new Date();
+  const opts={weekday:'long',day:'numeric',month:'long'};
+  const str=d.toLocaleDateString('ru-RU',opts);
+  const el=document.getElementById('sidebarDate');
+  const ov=document.getElementById('overviewDate');
+  if(el)el.textContent=str;
+  if(ov)ov.textContent=str;
+}
+
+// MONTH STATE
+const now=new Date();
+let selectedMonth=now.getFullYear()+'-'+(now.getMonth()+1).toString().padStart(2,'0');
+
+function changeMonth(dir){
+  const[y,m]=selectedMonth.split('-').map(Number);
+  const d=new Date(y,m-1+dir,1);
+  selectedMonth=d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0');
+  updateMonthLabel();render();
+}
+function goToCurrentMonth(){
+  const d=new Date();
+  selectedMonth=d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0');
+  updateMonthLabel();render();
+}
+function updateMonthLabel(){
+  const[y,m]=selectedMonth.split('-').map(Number);
+  const d=new Date(y,m-1,1);
+  const label=d.toLocaleDateString('ru-RU',{month:'long',year:'numeric'});
+  const el=document.getElementById('monthLabel');
+  if(el)el.textContent=label.charAt(0).toUpperCase()+label.slice(1);
+  const cur=new Date();
+  const isCurrent=y===cur.getFullYear()&&(m-1)===cur.getMonth();
+  const ind=document.getElementById('currentMonthIndicator');
+  if(ind)ind.textContent=isCurrent?'текущий месяц':'';
+}
+function monthOf(dateStr){
+  if(!dateStr)return null;
+  return dateStr.substr(0,7);
+}
+
+// OVERVIEW
+function renderOverview(){
+  const tasks=S('tasks')||[];
+  const today=todayStr();
+  const todayTasks=tasks.filter(t=>t.dueDate===today||(!t.dueDate&&t.repeat));
+  const t=getMonthTotals();
+
+  document.getElementById('statsGrid').innerHTML=`
+    <div class="stat-card"><div class="stat-label">Гонорары за месяц</div><div class="stat-value">${fmt(t.feePaid)} ₸</div></div>
+    <div class="stat-card"><div class="stat-label">Активных клиентов</div><div class="stat-value">${PROJECTS.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Задач сегодня</div><div class="stat-value">${todayTasks.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Ожидает оплаты</div><div class="stat-value amber">${fmt(t.totalPending)} ₸</div></div>
+  `;
+
+  document.getElementById('overviewProjects').innerHTML=PROJECTS.map(p=>{
+    const d=getProjData(p.id);
+    const st=getMonthStatus(p.id);
+    const feeOk=st.feeStatus==='paid';
+    return `<div class="project-row" style="flex-direction:column;align-items:stretch;padding:10px 0;gap:0">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="project-dot" style="background:${p.color}"></div>
+        <span class="project-name" style="flex:1">${p.name}</span>
+        <span style="font-size:13px;font-weight:500;color:${feeOk?'var(--accent)':'var(--text)'}">${fmt(d.fee)} ₸</span>
+        <span style="font-size:11px;padding:1px 7px;border-radius:8px;${feeOk?'background:var(--accent-bg);color:var(--accent)':'background:var(--amber-bg);color:var(--amber)'}">${feeOk?'✓':'ожид.'}</span>
+      </div>
+      ${d.budget?`<div style="display:flex;align-items:center;gap:6px;margin-top:3px;padding-left:16px">
+        <span style="font-size:11px;color:var(--text3)">Бюджет:</span>
+        <span style="font-size:12px;font-weight:500;color:var(--blue)">${fmt(d.budget)} ₸</span>
+      </div>`:''}
+    </div>`;
+  }).join('');
+
+  const taskItems=todayTasks.slice(0,6).map(t=>`
+    <div class="task-item${t.done?' done':''}" onclick="toggleTask('${t.id}');renderOverview()">
+      <div class="task-checkbox${t.done?' checked':''}"></div>
+      <div class="task-content">
+        <div class="task-text" style="font-size:13px">${t.text}</div>
+        <div class="task-meta">
+          ${t.time?`<span class="task-badge badge-time">до ${t.time}</span>`:''}
+          ${t.priority==='urgent'?'<span class="task-badge badge-urgent">срочно</span>':''}
+          ${t.done?'<span class="task-badge badge-done">готово</span>':''}
+        </div>
+      </div>
+    </div>
+  `).join('');
+  document.getElementById('overviewTasks').innerHTML=taskItems||'<div class="empty"><p>Все задачи выполнены! 🎉</p></div>';
+}
+
+function fmt(n){return n.toLocaleString('ru-RU')}
+
+// TASKS
+function renderTasks(){
+  const tasks=S('tasks')||[];
+  const filter=document.getElementById('tasksFilter');
+  const all=['all',...PROJECTS.map(p=>p.id)];
+  filter.innerHTML=all.map(f=>`
+    <button class="filter-btn${tasksFilter===f?' active':''}" onclick="tasksFilter='${f}';renderTasks()">
+      ${f==='all'?'Все':`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${pcolor(f)};margin-right:5px;vertical-align:2px"></span>${pname(f)}`}
+    </button>
+  `).join('');
+
+  const filtered=tasksFilter==='all'?tasks:tasks.filter(t=>t.project===tasksFilter);
+  const today=todayStr();
+  const todayTasks=filtered.filter(t=>!t.done&&(t.dueDate===today||t.repeat));
+  const doneTasks=filtered.filter(t=>t.done);
+  const otherTasks=filtered.filter(t=>!t.done&&t.dueDate!==today&&!t.repeat);
+
+  let html='';
+  if(todayTasks.length){
+    html+=`<div class="tasks-section">
+      <div class="tasks-section-header">
+        <div class="tasks-section-dot" style="background:var(--accent2)"></div>
+        <span class="tasks-section-title">Сегодня</span>
+        <span class="tasks-count">${todayTasks.length}</span>
+      </div>
+      ${todayTasks.map(t=>taskHTML(t)).join('')}
+    </div>`;
+  }
+  if(otherTasks.length){
+    html+=`<div class="tasks-section">
+      <div class="tasks-section-header">
+        <div class="tasks-section-dot" style="background:var(--blue)"></div>
+        <span class="tasks-section-title">Остальные задачи</span>
+        <span class="tasks-count">${otherTasks.length}</span>
+      </div>
+      ${otherTasks.map(t=>taskHTML(t)).join('')}
+    </div>`;
+  }
+  if(doneTasks.length){
+    html+=`<div class="tasks-section">
+      <div class="tasks-section-header">
+        <div class="tasks-section-dot" style="background:var(--border2)"></div>
+        <span class="tasks-section-title">Выполнено</span>
+        <span class="tasks-count">${doneTasks.length}</span>
+      </div>
+      ${doneTasks.map(t=>taskHTML(t)).join('')}
+    </div>`;
+  }
+  if(!filtered.length)html='<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><p>Задач нет</p></div>';
+  document.getElementById('tasksList').innerHTML=html;
+
+  // Fill project selects
+  ['quickTaskProject'].forEach(id=>{
+    const sel=document.getElementById(id);
+    if(sel&&sel.options.length<=1){
+      PROJECTS.forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;sel.appendChild(o)});
+    }
+  });
+}
+
+function taskHTML(t){
+  const badges=[];
+  if(t.time)badges.push(`<span class="task-badge badge-time">до ${t.time}</span>`);
+  if(t.repeatType==='payment')badges.push(`<span class="task-badge" style="background:var(--accent2-bg);color:var(--accent2)">оплата</span>`);
+  else if(t.priority==='urgent'&&!t.done)badges.push(`<span class="task-badge badge-urgent">срочно</span>`);
+  if(t.priority==='today'&&!t.done&&t.repeatType!=='payment')badges.push(`<span class="task-badge badge-today">сегодня</span>`);
+  if(t.repeatType==='report')badges.push(`<span class="task-badge badge-repeat">ежедневно</span>`);
+  if(t.done)badges.push(`<span class="task-badge badge-done">готово</span>`);
+  const isPayment=t.repeatType==='payment';
+  return `<div class="task-item${t.done?' done':''}${isPayment?' style="border-left:3px solid var(--accent2)"':''}">
+    <div class="task-checkbox${t.done?' checked':''}" onclick="toggleTask('${t.id}')"></div>
+    <div class="task-content">
+      <div class="task-text">${t.text}</div>
+      <div class="task-meta">
+        <span class="task-project">${pname(t.project)}</span>
+        ${badges.join('')}
+      </div>
+    </div>
+    <div class="task-actions">
+      ${isPayment?`<button class="task-del" style="font-size:11px;color:var(--accent2)" onclick="navigate('finance')" title="Открыть финансы">₸</button>`:''}
+      ${!t.repeat?`<button class="task-del" onclick="deleteTask('${t.id}')" title="Удалить">✕</button>`:''}
+    </div>
+  </div>`;
+}
+
+function toggleTask(id){
+  const tasks=S('tasks')||[];
+  const t=tasks.find(t=>t.id===id);
+  if(t){t.done=!t.done;S('tasks',tasks);renderTasks();if(currentPage==='overview')renderOverview();}
+}
+function deleteTask(id){
+  S('tasks',(S('tasks')||[]).filter(t=>t.id!==id));
+  renderTasks();
+}
+function quickAddTask(){
+  const txt=document.getElementById('quickTaskInput').value.trim();
+  if(!txt)return;
+  const proj=document.getElementById('quickTaskProject').value;
+  const pri=document.getElementById('quickTaskPriority').value;
+  const tasks=S('tasks')||[];
+  tasks.unshift({id:uid(),project:proj||PROJECTS[0].id,text:txt,done:false,priority:pri,time:'',repeat:false,created:todayStr(),dueDate:todayStr()});
+  S('tasks',tasks);
+  document.getElementById('quickTaskInput').value='';
+  renderTasks();
+  notify('Задача добавлена');
+}
+
+function openAddTask(){
+  const opts=PROJECTS.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+  document.getElementById('modalContent').innerHTML=`
+    <h3>Новая задача</h3>
+    <div class="form-group"><label class="form-label">Задача</label><input class="form-control" id="mTaskText" placeholder="Что нужно сделать?"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Проект</label><select class="form-control" id="mTaskProj">${opts}</select></div>
+      <div class="form-group"><label class="form-label">Приоритет</label><select class="form-control" id="mTaskPri"><option value="normal">Обычная</option><option value="urgent">Срочно</option><option value="today">Сегодня</option><option value="time">До времени</option></select></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Дедлайн</label><input class="form-control" type="date" id="mTaskDate" value="${todayStr()}"></div>
+      <div class="form-group"><label class="form-label">Время (если нужно)</label><input class="form-control" type="time" id="mTaskTime"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Отмена</button>
+      <button class="btn btn-primary" onclick="saveTask()">Добавить</button>
+    </div>
+  `;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function saveTask(){
+  const txt=document.getElementById('mTaskText').value.trim();
+  if(!txt)return;
+  const tasks=S('tasks')||[];
+  tasks.unshift({id:uid(),project:document.getElementById('mTaskProj').value,text:txt,done:false,priority:document.getElementById('mTaskPri').value,time:document.getElementById('mTaskTime').value,repeat:false,created:todayStr(),dueDate:document.getElementById('mTaskDate').value});
+  S('tasks',tasks);
+  closeModal();renderTasks();notify('Задача добавлена');
+}
+
+// ── FINANCE DATA HELPERS ──────────────────────────────────────────────────
+// Storage structure:
+//   projectData[projId] = { fee: N, budget: N }   ← base defaults per project
+//   monthStatus[month][projId] = { feeStatus, budgetStatus }
+//   oneTimePayments = [ { id, month, projId|'', label, amount, status } ]
+
+function getProjData(projId){
+  const all=S('projectData')||{};
+  const proj=PROJECTS.find(p=>p.id===projId)||{};
+  return all[projId]||{fee:proj.amount||0,budget:0};
+}
+function setProjData(projId,obj){
+  const all=S('projectData')||{};
+  all[projId]=obj;
+  S('projectData',all);
+}
+function getMonthStatus(projId){
+  const all=S('monthStatus')||{};
+  const mo=all[selectedMonth]||{};
+  return mo[projId]||{feeStatus:'pending',budgetStatus:'pending'};
+}
+function setMonthStatus(projId,key,val){
+  const all=S('monthStatus')||{};
+  if(!all[selectedMonth])all[selectedMonth]={};
+  if(!all[selectedMonth][projId])all[selectedMonth][projId]={feeStatus:'pending',budgetStatus:'pending'};
+  all[selectedMonth][projId][key]=val;
+  S('monthStatus',all);
+}
+function getOneTime(){
+  return (S('oneTimePayments')||[]).filter(p=>p.month===selectedMonth);
+}
+
+// ── MAIN OVERVIEW needs amounts from finance ───────────────────────────────
+function getMonthTotals(){
+  let fee=0,feePaid=0,budget=0,budgetPaid=0,extra=0,extraPaid=0;
+  // Include archived projects that have data for this month
+  const arch=S('archivedProjects')||{};
+  const monthStatusAll=S('monthStatus')||{};
+  const thisMonthStatus=monthStatusAll[selectedMonth]||{};
+  const archivedIds=Object.keys(arch).filter(id=>thisMonthStatus[id]&&!PROJECTS.find(p=>p.id===id));
+  const allForMonth=[...PROJECTS,...archivedIds.map(id=>({...arch[id],id}))];
+  allForMonth.forEach(p=>{
+    const d=getProjData(p.id);
+    const st=getMonthStatus(p.id);
+    fee+=d.fee;
+    budget+=d.budget||0;
+    if(st.feeStatus==='paid')feePaid+=d.fee;
+    if(st.budgetStatus==='paid')budgetPaid+=d.budget||0;
+  });
+  (S('oneTimePayments')||[]).filter(p=>p.month===selectedMonth).forEach(p=>{
+    extra+=p.amount;
+    if(p.status==='paid')extraPaid+=p.amount;
+  });
+  return{fee,feePaid,budget,budgetPaid,extra,extraPaid,
+    total:fee+budget+extra,
+    totalPaid:feePaid+budgetPaid+extraPaid,
+    totalPending:(fee-feePaid)+(budget-budgetPaid)+(extra-extraPaid)};
+}
+
+// ── RENDER FINANCE ─────────────────────────────────────────────────────────
+function renderFinance(){
+  const t=getMonthTotals();
+  const[y,mo]=selectedMonth.split('-').map(Number);
+  const monthName=new Date(y,mo-1,1).toLocaleDateString('ru-RU',{month:'long',year:'numeric'});
+
+  document.getElementById('finSummary').innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <span style="font-size:14px;font-weight:500;color:var(--text)">${monthName.charAt(0).toUpperCase()+monthName.slice(1)}</span>
+      <div style="display:flex;gap:6px">
+        <button class="month-btn" onclick="changeMonth(-1)" style="border:1px solid var(--border)">&#8249;</button>
+        <button class="month-btn" onclick="changeMonth(1)" style="border:1px solid var(--border)">&#8250;</button>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
+      <div style="background:var(--surface2);border-radius:var(--r-sm);padding:12px">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:6px">Всего за месяц</div>
+        <div style="font-size:18px;font-weight:600;font-family:var(--font-display);letter-spacing:-0.5px">${fmt(t.total)} ₸</div>
+      </div>
+      <div style="background:var(--accent-bg);border-radius:var(--r-sm);padding:12px">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:6px">Получено</div>
+        <div style="font-size:18px;font-weight:600;font-family:var(--font-display);letter-spacing:-0.5px;color:var(--accent)">${fmt(t.totalPaid)} ₸</div>
+      </div>
+      <div style="background:var(--amber-bg);border-radius:var(--r-sm);padding:12px">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:6px">Ожидается</div>
+        <div style="font-size:18px;font-weight:600;font-family:var(--font-display);letter-spacing:-0.5px;color:var(--amber)">${fmt(t.totalPending)} ₸</div>
+      </div>
+      <div style="background:var(--blue-bg);border-radius:var(--r-sm);padding:12px">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:6px">Рекл. бюджеты</div>
+        <div style="font-size:18px;font-weight:600;font-family:var(--font-display);letter-spacing:-0.5px;color:var(--blue)">${fmt(t.budget)} ₸</div>
+      </div>
+    </div>
+  `;
+
+  // Projects table
+  // Build project list: active + any archived that have monthStatus data for this month
+  const arch=S('archivedProjects')||{};
+  const monthStatusAll=S('monthStatus')||{};
+  const thisMonthStatus=monthStatusAll[selectedMonth]||{};
+  // IDs that appear in this month's status but are no longer active
+  const archivedWithData=Object.keys(arch).filter(id=>thisMonthStatus[id]&&!PROJECTS.find(p=>p.id===id));
+  const finProjects=[...PROJECTS,...archivedWithData.map(id=>({...arch[id],id,_archived:true}))];
+
+  const projRows=finProjects.map(proj=>{
+    const d=getProjData(proj.id);
+    const st=getMonthStatus(proj.id);
+    const fLabel={paid:'✓ Получено',pending:'Ожидается',overdue:'Просрочено'}[st.feeStatus]||'Ожидается';
+    const fClass={paid:'status-paid',pending:'status-pending',overdue:'status-overdue'}[st.feeStatus]||'status-pending';
+    const bLabel={paid:'✓ Получено',pending:'Ожидается',overdue:'Просрочено'}[st.budgetStatus]||'Ожидается';
+    const bClass={paid:'status-paid',pending:'status-pending',overdue:'status-overdue'}[st.budgetStatus]||'status-pending';
+    const isArchived=proj._archived;
+    return `<tr style="border-bottom:1px solid var(--border)${isArchived?';opacity:0.6':''}">
+      <td style="padding:11px 0;font-size:14px">
+        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${proj.color||'#aaa'};margin-right:8px;vertical-align:2px"></span>
+        ${proj.name}${isArchived?'<span style="font-size:10px;color:var(--text3);margin-left:6px;background:var(--surface2);padding:1px 5px;border-radius:4px">удалён</span>':''}
+      </td>
+      <td style="padding:11px 8px;font-size:14px;font-weight:500;color:var(--accent)${isArchived?'':';cursor:pointer'}" ${isArchived?'':` onclick="editProjFin('${proj.id}')" title="Нажмите для изменения"`}>
+        ${fmt(d.fee)} ₸
+      </td>
+      <td style="padding:11px 8px">
+        <span class="client-status ${fClass}"${isArchived?'':` style="cursor:pointer" onclick="cycleFeeStatus('${proj.id}')" title="Нажмите для смены статуса"`}>${fLabel}</span>
+      </td>
+      <td style="padding:11px 8px;font-size:14px;font-weight:500;color:var(--blue)${isArchived?'':';cursor:pointer'}" ${isArchived?'':` onclick="editProjFin('${proj.id}')" title="Нажмите для изменения"`}>
+        ${d.budget?fmt(d.budget)+' ₸':'—'}
+      </td>
+      <td style="padding:11px 0">
+        ${d.budget?(isArchived?`<span class="client-status ${bClass}">${bLabel}</span>`:`<span class="client-status ${bClass}" style="cursor:pointer" onclick="cycleBudgetStatus('${proj.id}')" title="Нажмите для смены статуса">${bLabel}</span>`):'<span style="font-size:12px;color:var(--text3)">нет</span>'}
+      </td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('finProjectsSection').innerHTML=`
+    <div class="card" style="margin-bottom:18px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <span style="font-size:14px;font-weight:500;color:var(--text2)">Проекты — гонорар и бюджет</span>
+        <span style="font-size:12px;color:var(--text3)">Нажмите на сумму или статус чтобы изменить</span>
+      </div>
+      <table style="width:100%;border-collapse:collapse">
+        <thead>
+          <tr style="border-bottom:2px solid var(--border)">
+            <th style="text-align:left;font-size:12px;color:var(--text3);font-weight:500;padding-bottom:8px">Проект</th>
+            <th style="text-align:left;font-size:12px;color:var(--text3);font-weight:500;padding-bottom:8px;padding-left:8px">Гонорар</th>
+            <th style="text-align:left;font-size:12px;color:var(--text3);font-weight:500;padding-bottom:8px;padding-left:8px">Статус</th>
+            <th style="text-align:left;font-size:12px;color:var(--text3);font-weight:500;padding-bottom:8px;padding-left:8px">Бюджет</th>
+            <th style="text-align:left;font-size:12px;color:var(--text3);font-weight:500;padding-bottom:8px">Статус</th>
+          </tr>
+        </thead>
+        <tbody>${projRows}</tbody>
+      </table>
+    </div>
+  `;
+
+  // One-time payments
+  const oneTime=getOneTime();
+  const otRows=oneTime.length?oneTime.map(p=>{
+    const proj=p.projId?PROJECTS.find(pr=>pr.id===p.projId):null;
+    const stClass={paid:'status-paid',pending:'status-pending'}[p.status];
+    const stLabel={paid:'✓ Получено',pending:'Ожидается'}[p.status];
+    return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+      <div style="flex:1;font-size:14px">${p.label}${proj?`<span style="font-size:11px;color:var(--text3);margin-left:8px">${proj.name}</span>`:''}</div>
+      <div style="font-size:14px;font-weight:500;color:var(--text)">${fmt(p.amount)} ₸</div>
+      <span class="client-status ${stClass}" style="cursor:pointer" onclick="cycleOneTimeStatus('${p.id}')">${stLabel}</span>
+      <button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;padding:2px 6px;border-radius:4px" onclick="deleteOneTime('${p.id}')" onmouseover="this.style.background='var(--red-bg)';this.style.color='var(--red)'" onmouseout="this.style.background='none';this.style.color='var(--text3)'">✕</button>
+    </div>`;
+  }).join(''):`<div style="text-align:center;padding:20px;font-size:14px;color:var(--text3)">Разовых оплат за этот месяц нет</div>`;
+
+  document.getElementById('finOneTimeSection').innerHTML=`
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <span style="font-size:14px;font-weight:500;color:var(--text2)">Разовые оплаты</span>
+        <button class="btn btn-primary" onclick="openAddOneTime()" style="font-size:12px;padding:5px 12px">+ Добавить</button>
+      </div>
+      ${otRows}
+      ${oneTime.length?`<div style="display:flex;justify-content:flex-end;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+        <span style="font-size:13px;color:var(--text2)">Итого: <b>${fmt(oneTime.reduce((s,p)=>s+p.amount,0))} ₸</b></span>
+      </div>`:''}
+    </div>
+  `;
+}
+
+// Status cycling (click to switch)
+function cycleFeeStatus(projId){
+  const st=getMonthStatus(projId);
+  const cycle={pending:'paid',paid:'overdue',overdue:'pending'};
+  const newStatus=cycle[st.feeStatus]||'pending';
+  setMonthStatus(projId,'feeStatus',newStatus);
+  // If marked paid — remove today's payment reminder task
+  if(newStatus==='paid'){
+    const today=todayStr();
+    const tasks=(S('tasks')||[]).filter(t=>!(t.repeatType==='payment'&&t.project===projId&&t.dueDate===today));
+    S('tasks',tasks);
+  }
+  renderFinance();if(currentPage==='overview')renderOverview();
+}
+function cycleBudgetStatus(projId){
+  const st=getMonthStatus(projId);
+  const cycle={pending:'paid',paid:'overdue',overdue:'pending'};
+  setMonthStatus(projId,'budgetStatus',cycle[st.budgetStatus]||'pending');
+  renderFinance();if(currentPage==='overview')renderOverview();
+}
+function cycleOneTimeStatus(id){
+  const all=S('oneTimePayments')||[];
+  const p=all.find(p=>p.id===id);
+  if(p){p.status=p.status==='paid'?'pending':'paid';S('oneTimePayments',all);}
+  renderFinance();if(currentPage==='overview')renderOverview();
+}
+function deleteOneTime(id){
+  S('oneTimePayments',(S('oneTimePayments')||[]).filter(p=>p.id!==id));
+  renderFinance();if(currentPage==='overview')renderOverview();
+}
+
+// Edit project fee + budget
+function editProjFin(projId){
+  const d=getProjData(projId);
+  const proj=PROJECTS.find(p=>p.id===projId);
+  document.getElementById('modalContent').innerHTML=`
+    <h3>${proj?proj.name:projId}</h3>
+    <p style="font-size:12px;color:var(--text3);margin-bottom:14px">Базовые суммы — используются если для конкретного месяца не задано иное.</p>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Гонорар за ведение (₸)</label><input class="form-control" id="eProjFee" type="number" value="${d.fee}"></div>
+      <div class="form-group"><label class="form-label">Рекл. бюджет клиента (₸)</label><input class="form-control" id="eProjBudget" type="number" value="${d.budget||0}"></div>
+    </div>
+    <p style="font-size:12px;color:var(--text3);margin-top:-4px;margin-bottom:14px">Бюджет — деньги клиента на рекламу. Отображается отдельной строкой на главной.</p>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Отмена</button>
+      <button class="btn btn-primary" onclick="saveProjFin('${projId}')">Сохранить</button>
+    </div>
+  `;
+  document.getElementById('modalOverlay').classList.add('open');
+  setTimeout(()=>{const i=document.getElementById('eProjFee');if(i)i.select();},50);
+}
+function saveProjFin(projId){
+  const fee=parseInt(document.getElementById('eProjFee').value)||0;
+  const budget=parseInt(document.getElementById('eProjBudget').value)||0;
+  setProjData(projId,{fee,budget});
+  closeModal();renderFinance();if(currentPage==='overview')renderOverview();
+  notify('Данные проекта обновлены');
+}
+
+// Add one-time payment
+function openAddOneTime(){
+  const opts='<option value="">Без проекта</option>'+PROJECTS.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+  document.getElementById('modalContent').innerHTML=`
+    <h3>Разовая оплата</h3>
+    <div class="form-group"><label class="form-label">Описание</label><input class="form-control" id="otLabel" placeholder="Например: допработа, бонус, аудит..."></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Сумма (₸)</label><input class="form-control" id="otAmount" type="number" placeholder="0"></div>
+      <div class="form-group"><label class="form-label">Проект (если привязать)</label><select class="form-control" id="otProj">${opts}</select></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Месяц</label><input class="form-control" id="otMonth" type="month" value="${selectedMonth}"></div>
+      <div class="form-group"><label class="form-label">Статус</label><select class="form-control" id="otStatus">
+        <option value="pending">Ожидается</option>
+        <option value="paid">Уже получено</option>
+      </select></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Отмена</button>
+      <button class="btn btn-primary" onclick="saveOneTime()">Добавить</button>
+    </div>
+  `;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function saveOneTime(){
+  const label=document.getElementById('otLabel').value.trim();
+  const amount=parseInt(document.getElementById('otAmount').value)||0;
+  if(!label||!amount){notify('Введите описание и сумму');return;}
+  const all=S('oneTimePayments')||[];
+  all.push({id:uid(),label,amount,projId:document.getElementById('otProj').value,
+    month:document.getElementById('otMonth').value,
+    status:document.getElementById('otStatus').value});
+  S('oneTimePayments',all);
+  closeModal();renderFinance();if(currentPage==='overview')renderOverview();
+  notify('Оплата добавлена');
+}
+
+// Legacy stubs (keep for safety)
+function markPaid(){}function markPaid2(){}function markOverdue(){}function markPending(){}
+function editPayment(){}function savePayment(){}function openAddPayment(){}function addPayment(){}
+function getMonthAmount(projId){return getProjData(projId).fee;}
+function editProjectAmount(projId){editProjFin(projId);}
+
+// ── PROJECTS PAGE ─────────────────────────────────────────────────────────
+const PALETTE=['#9B7FDE','#E55A5A','#D4A827','#E5714A','#3BB87A','#E55A9B','#4A90D4','#5A9BD4','#D45A5A','#5AD4A4','#D4A45A','#A45AD4'];
+
+function renderProjectsPage(){
+  refreshProjects();
+  const html=PROJECTS.map(p=>{
+    const d=getProjData(p.id);
+    const payStr=p.payDay?`${p.payDay}-го числа`:'не задано';
+    return `<div class="card" style="margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:14px;height:14px;border-radius:50%;background:${p.color};flex-shrink:0"></div>
+        <div style="flex:1">
+          <div style="font-size:15px;font-weight:500">${p.name}</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:2px">
+            Гонорар: <b style="color:var(--text2)">${fmt(d.fee)} ₸</b>
+            ${d.budget?` &nbsp;·&nbsp; Бюджет: <b style="color:var(--blue)">${fmt(d.budget)} ₸</b>`:''}
+            &nbsp;·&nbsp; Дата оплаты: <b style="color:${p.payDay?'var(--accent2)':'var(--text3)'}">${payStr}</b>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-sm btn-outline" onclick="openEditProject('${p.id}')">✎ Изменить</button>
+          <button class="btn-sm btn-danger" onclick="confirmDeleteProject('${p.id}')">✕</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('projectsList').innerHTML=html||'<div class="empty"><p>Нет проектов</p></div>';
+}
+
+function openAddProject(){
+  const colorOpts=PALETTE.map(c=>`<option value="${c}" ${c==='#4A90D4'?'selected':''}>${c}</option>`).join('');
+  document.getElementById('modalContent').innerHTML=`
+    <h3>Новый проект</h3>
+    <div class="form-row">
+      <div class="form-group" style="flex:2"><label class="form-label">Название</label><input class="form-control" id="npName" placeholder="Название клиента"></div>
+      <div class="form-group"><label class="form-label">Цвет</label>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px" id="colorPicker">
+          ${PALETTE.map(c=>`<div onclick="selectColor('${c}')" style="width:22px;height:22px;border-radius:50%;background:${c};cursor:pointer;border:2px solid transparent;transition:all 0.15s" data-color="${c}"></div>`).join('')}
+        </div>
+        <input type="hidden" id="npColor" value="${PALETTE[8]}">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Гонорар (₸/мес)</label><input class="form-control" id="npFee" type="number" placeholder="0"></div>
+      <div class="form-group"><label class="form-label">Рекл. бюджет (₸)</label><input class="form-control" id="npBudget" type="number" placeholder="0"></div>
+    </div>
+    <div class="form-group"><label class="form-label">День оплаты (число месяца, 1–31)</label>
+      <input class="form-control" id="npPayDay" type="number" min="1" max="31" placeholder="Например: 5">
+      <div style="font-size:11px;color:var(--text3);margin-top:4px">С этого дня будет появляться задача-напоминание об оплате пока не отметишь «Получено» в финансах.</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Отмена</button>
+      <button class="btn btn-primary" onclick="saveNewProject()">Добавить</button>
+    </div>
+  `;
+  document.getElementById('modalOverlay').classList.add('open');
+  selectColor(PALETTE[8]);
+}
+
+function selectColor(c){
+  document.getElementById('npColor').value=c;
+  document.querySelectorAll('#colorPicker [data-color]').forEach(el=>{
+    el.style.border=el.dataset.color===c?'2px solid var(--text)':'2px solid transparent';
+    el.style.transform=el.dataset.color===c?'scale(1.2)':'scale(1)';
+  });
+}
+
+function saveNewProject(){
+  const name=document.getElementById('npName').value.trim();
+  if(!name){notify('Введите название');return;}
+  const fee=parseInt(document.getElementById('npFee').value)||0;
+  const budget=parseInt(document.getElementById('npBudget').value)||0;
+  const payDay=parseInt(document.getElementById('npPayDay').value)||0;
+  const color=document.getElementById('npColor').value||PALETTE[0];
+  const id='p'+uid();
+  const projects=getProjects();
+  projects.push({id,name,color,amount:fee,payDay});
+  S('projects',projects);
+  // Save fee/budget to projectData
+  const pd=S('projectData')||{};
+  pd[id]={fee,budget};
+  S('projectData',pd);
+  refreshProjects();
+  // Add daily report task for today
+  const tasks=S('tasks')||[];
+  const today=todayStr();
+  tasks.push({id:uid(),project:id,text:`Заполнить отчёт по рекламе — ${name}`,done:false,priority:'time',time:'10:15',repeat:true,repeatType:'report',created:today,dueDate:today});
+  S('tasks',tasks);
+  S('lastRepeatCheck',''); // force re-check tomorrow
+  closeModal();renderProjectsPage();notify(`Проект «${name}» добавлен`);
+}
+
+function openEditProject(projId){
+  refreshProjects();
+  const p=PROJECTS.find(pr=>pr.id===projId);
+  if(!p)return;
+  const d=getProjData(projId);
+  document.getElementById('modalContent').innerHTML=`
+    <h3>Редактировать: ${p.name}</h3>
+    <div class="form-row">
+      <div class="form-group" style="flex:2"><label class="form-label">Название</label><input class="form-control" id="epName" value="${p.name}"></div>
+      <div class="form-group"><label class="form-label">Цвет</label>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px" id="colorPicker2">
+          ${PALETTE.map(c=>`<div onclick="selectColor2('${c}')" style="width:22px;height:22px;border-radius:50%;background:${c};cursor:pointer;border:${c===p.color?'2px solid var(--text)':'2px solid transparent'};transform:${c===p.color?'scale(1.2)':'scale(1)'};transition:all 0.15s" data-color="${c}"></div>`).join('')}
+        </div>
+        <input type="hidden" id="epColor" value="${p.color}">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Гонорар (₸/мес)</label><input class="form-control" id="epFee" type="number" value="${d.fee}"></div>
+      <div class="form-group"><label class="form-label">Рекл. бюджет (₸)</label><input class="form-control" id="epBudget" type="number" value="${d.budget||0}"></div>
+    </div>
+    <div class="form-group"><label class="form-label">День оплаты (1–31)</label>
+      <input class="form-control" id="epPayDay" type="number" min="1" max="31" value="${p.payDay||''}">
+      <div style="font-size:11px;color:var(--text3);margin-top:4px">Напоминание-задача появляется начиная с этого числа, пока оплата не отмечена.</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Отмена</button>
+      <button class="btn btn-primary" onclick="saveEditProject('${projId}')">Сохранить</button>
+    </div>
+  `;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function selectColor2(c){
+  document.getElementById('epColor').value=c;
+  document.querySelectorAll('#colorPicker2 [data-color]').forEach(el=>{
+    el.style.border=el.dataset.color===c?'2px solid var(--text)':'2px solid transparent';
+    el.style.transform=el.dataset.color===c?'scale(1.2)':'scale(1)';
+  });
+}
+
+function saveEditProject(projId){
+  const name=document.getElementById('epName').value.trim();
+  if(!name){notify('Введите название');return;}
+  const fee=parseInt(document.getElementById('epFee').value)||0;
+  const budget=parseInt(document.getElementById('epBudget').value)||0;
+  const payDay=parseInt(document.getElementById('epPayDay').value)||0;
+  const color=document.getElementById('epColor').value;
+  const projects=getProjects();
+  const p=projects.find(pr=>pr.id===projId);
+  if(p){p.name=name;p.color=color;p.amount=fee;p.payDay=payDay;}
+  S('projects',projects);
+  const pd=S('projectData')||{};
+  pd[projId]={fee,budget};
+  S('projectData',pd);
+  // Update existing report task texts
+  const tasks=S('tasks')||[];
+  tasks.forEach(t=>{if(t.project===projId&&t.repeatType==='report')t.text=`Заполнить отчёт по рекламе — ${name}`;});
+  S('tasks',tasks);
+  refreshProjects();
+  closeModal();renderProjectsPage();render();notify('Проект обновлён');
+}
+
+function confirmDeleteProject(projId){
+  refreshProjects();
+  const p=PROJECTS.find(pr=>pr.id===projId);
+  if(!p)return;
+  document.getElementById('modalContent').innerHTML=`
+    <h3>Удалить проект?</h3>
+    <p style="font-size:14px;color:var(--text2);margin-bottom:8px">«${p.name}» будет удалён из списка. Связанные задачи и данные финансов останутся.</p>
+    <p style="font-size:12px;color:var(--red)">Это действие необратимо.</p>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Отмена</button>
+      <button class="btn" style="background:var(--red);color:#fff" onclick="deleteProject('${projId}')">Удалить</button>
+    </div>
+  `;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function deleteProject(projId){
+  // Archive project snapshot so history months can still show it
+  const p=getProjects().find(pr=>pr.id===projId);
+  if(p){
+    const arch=S('archivedProjects')||{};
+    arch[projId]={...p,...(getProjData(projId)||{}),deleted:true};
+    S('archivedProjects',arch);
+  }
+  const projects=getProjects().filter(pr=>pr.id!==projId);
+  S('projects',projects);
+  // Remove daily/payment repeat tasks for this project
+  const tasks=(S('tasks')||[]).filter(t=>!(t.project===projId&&t.repeat));
+  S('tasks',tasks);
+  refreshProjects();
+  closeModal();renderProjectsPage();notify('Проект удалён');
+}
+
+// DOCS
+let currentDoc=null;
+function renderDocs(){}
+function openDoc(type){
+  currentDoc=type;
+  const gen=document.getElementById('docGenerator');
+  gen.classList.add('visible');
+  const opts=PROJECTS.map(p=>`<option value="${p.name}">${p.name}</option>`).join('');
+  const templates={
+    brief:`<h3>Бриф проекта</h3>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Клиент</label><select class="form-control" id="df1">${opts}</select></div>
+        <div class="form-group"><label class="form-label">Менеджер</label><input class="form-control" id="df2" placeholder="Ваше имя"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Цель рекламной кампании</label><input class="form-control" id="df3" placeholder="Лиды, трафик, узнаваемость..."></div>
+      <div class="form-group"><label class="form-label">Целевая аудитория</label><input class="form-control" id="df4" placeholder="Пол, возраст, интересы..."></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Бюджет (₸)</label><input class="form-control" id="df5" placeholder="0"></div>
+        <div class="form-group"><label class="form-label">Период</label><input class="form-control" id="df6" placeholder="01.06 — 30.06.2025"></div>
+      </div>`,
+    report:`<h3>Отчёт по рекламе</h3>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Клиент</label><select class="form-control" id="df1">${opts}</select></div>
+        <div class="form-group"><label class="form-label">Период</label><input class="form-control" id="df2" placeholder="01.06 — 07.06.2025"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Показы</label><input class="form-control" id="df3" placeholder="0" type="number"></div>
+        <div class="form-group"><label class="form-label">Клики</label><input class="form-control" id="df4" placeholder="0" type="number"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Лиды</label><input class="form-control" id="df5" placeholder="0" type="number"></div>
+        <div class="form-group"><label class="form-label">Потрачено (₸)</label><input class="form-control" id="df6" placeholder="0" type="number"></div>
+      </div>`,
+    contract:`<h3>Договор</h3>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Клиент (ИП/ТОО)</label><input class="form-control" id="df1" placeholder="ИП Иванов Иван Иванович"></div>
+        <div class="form-group"><label class="form-label">Дата договора</label><input class="form-control" id="df2" placeholder="01.06.2025"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Проект</label><select class="form-control" id="df3">${opts}</select></div>
+        <div class="form-group"><label class="form-label">Стоимость услуг (₸/мес)</label><input class="form-control" id="df4" placeholder="0" type="number"></div>
+      </div>`,
+    kp:`<h3>Коммерческое предложение</h3>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Кому</label><input class="form-control" id="df1" placeholder="Название компании"></div>
+        <div class="form-group"><label class="form-label">Контакт</label><input class="form-control" id="df2" placeholder="ФИО"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Площадки</label><input class="form-control" id="df3" placeholder="VK, Instagram, Facebook..."></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Бюджет на рекламу (₸)</label><input class="form-control" id="df4" placeholder="0" type="number"></div>
+        <div class="form-group"><label class="form-label">Гонорар (₸/мес)</label><input class="form-control" id="df5" placeholder="0" type="number"></div>
+      </div>`,
+    media:`<h3>Медиаплан</h3>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Клиент</label><select class="form-control" id="df1">${opts}</select></div>
+        <div class="form-group"><label class="form-label">Месяц</label><input class="form-control" id="df2" placeholder="Июнь 2025"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">VK Ads (₸)</label><input class="form-control" id="df3" placeholder="0" type="number"></div>
+        <div class="form-group"><label class="form-label">Meta Ads (₸)</label><input class="form-control" id="df4" placeholder="0" type="number"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Google Ads (₸)</label><input class="form-control" id="df5" placeholder="0" type="number"></div>
+        <div class="form-group"><label class="form-label">Другое (₸)</label><input class="form-control" id="df6" placeholder="0" type="number"></div>
+      </div>`,
+    invoice:`<h3>Счёт на оплату</h3>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Клиент</label><select class="form-control" id="df1">${opts}</select></div>
+        <div class="form-group"><label class="form-label">№ счёта</label><input class="form-control" id="df2" placeholder="2025-06"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Сумма (₸)</label><input class="form-control" id="df4" placeholder="0" type="number"></div>
+        <div class="form-group"><label class="form-label">Дата</label><input class="form-control" id="df3" placeholder="01.06.2025"></div>
+      </div>`
+  };
+  gen.innerHTML=(templates[type]||'')+'<div class="btn-group"><button class="btn btn-primary" onclick="generateDoc()">Сгенерировать</button><button class="btn btn-secondary" onclick="closeDoc()">Закрыть</button></div><div class="doc-preview" id="docPreview" style="display:none"></div>';
+}
+function closeDoc(){document.getElementById('docGenerator').classList.remove('visible');document.getElementById('docGenerator').innerHTML=''}
+function g(id){const el=document.getElementById(id);return el?el.value:''}
+function generateDoc(){
+  const d=new Date().toLocaleDateString('ru-RU');
+  let text='';
+  if(currentDoc==='brief'){
+    text=`БРИФ РЕКЛАМНОЙ КАМПАНИИ\n${'─'.repeat(40)}\nКлиент: ${g('df1')}\nМенеджер: ${g('df2')}\nДата: ${d}\n\nЦЕЛЬ КАМПАНИИ\n${g('df3')}\n\nЦЕЛЕВАЯ АУДИТОРИЯ\n${g('df4')}\n\nБЮДЖЕТ: ${fmt(parseInt(g('df5'))||0)} ₸\nПЕРИОД: ${g('df6')}\n\nПодпись клиента: ________________\nПодпись менеджера: ________________`;
+  }else if(currentDoc==='report'){
+    const clicks=parseInt(g('df4'))||1;const shows=parseInt(g('df3'))||1;
+    const ctr=((clicks/shows)*100).toFixed(2);
+    const cpl=g('df5')?(parseInt(g('df6'))/parseInt(g('df5'))).toFixed(0):'—';
+    text=`ОТЧЁТ ПО РЕКЛАМНОЙ КАМПАНИИ\n${'─'.repeat(40)}\nКлиент: ${g('df1')}\nПериод: ${g('df2')}\nДата отчёта: ${d}\n\nРЕЗУЛЬТАТЫ\nПоказы:    ${fmt(parseInt(g('df3'))||0)}\nКлики:     ${fmt(parseInt(g('df4'))||0)}\nCTR:       ${ctr}%\nЛиды:      ${g('df5')||0}\nПотрачено: ${fmt(parseInt(g('df6'))||0)} ₸\nCPL:       ${cpl} ₸`;
+  }else if(currentDoc==='contract'){
+    text=`ДОГОВОР НА ОКАЗАНИЕ УСЛУГ ТАРГЕТИРОВАННОЙ РЕКЛАМЫ\n${'─'.repeat(50)}\nДата: ${g('df2')}\n\nИСПОЛНИТЕЛЬ: ИП [Ваше имя]\nЗАКАЗЧИК: ${g('df1')}\n\nПРЕДМЕТ ДОГОВОРА\nИсполнитель обязуется оказывать услуги по управлению таргетированной рекламой для проекта «${g('df3')}».\n\nСТОИМОСТЬ УСЛУГ\nЕжемесячное вознаграждение: ${fmt(parseInt(g('df4'))||0)} ₸\nОплата до 5-го числа каждого месяца.\n\nПодписи сторон:\nИсполнитель: ________________\nЗаказчик:    ________________`;
+  }else if(currentDoc==='kp'){
+    const total=(parseInt(g('df4'))||0)+(parseInt(g('df5'))||0);
+    text=`КОММЕРЧЕСКОЕ ПРЕДЛОЖЕНИЕ\n${'─'.repeat(40)}\nКому: ${g('df1')} (${g('df2')})\nДата: ${d}\n\nМы предлагаем услуги по ведению таргетированной рекламы на площадках: ${g('df3')}\n\nЧТО ВХОДИТ:\n• Настройка и ведение рекламных кампаний\n• Ежедневный мониторинг и оптимизация\n• Еженедельные отчёты\n• Консультации по стратегии\n\nСТОИМОСТЬ:\nРекламный бюджет: ${fmt(parseInt(g('df4'))||0)} ₸\nГонорар за ведение: ${fmt(parseInt(g('df5'))||0)} ₸\nИтого: ${fmt(total)} ₸/мес`;
+  }else if(currentDoc==='media'){
+    const vk=parseInt(g('df3'))||0,meta=parseInt(g('df4'))||0,google=parseInt(g('df5'))||0,other=parseInt(g('df6'))||0;
+    const total=vk+meta+google+other;
+    text=`МЕДИАПЛАН\n${'─'.repeat(40)}\nКлиент: ${g('df1')}\nПериод: ${g('df2')}\n\nПЛОЩАДКА          БЮДЖЕТ\n${'─'.repeat(30)}\nVK Ads         ${fmt(vk)} ₸\nMeta Ads       ${fmt(meta)} ₸\nGoogle Ads     ${fmt(google)} ₸\nПрочее         ${fmt(other)} ₸\n${'─'.repeat(30)}\nИТОГО:         ${fmt(total)} ₸`;
+  }else if(currentDoc==='invoice'){
+    text=`СЧЁТ НА ОПЛАТУ №${g('df2')}\n${'─'.repeat(40)}\nДата: ${g('df3')}\nОт кого: ИП [Ваше имя]\nКому: ${g('df1')}\n\nНАЗВАНИЕ УСЛУГИ\nВедение таргетированной рекламы\n\nСУММА: ${fmt(parseInt(g('df4'))||0)} ₸\n\nБАНКОВСКИЕ РЕКВИЗИТЫ:\nБИК: [вашБИК]\nИИК: [вашИИК]\nБанк: [названиеБанка]`;
+  }
+  const prev=document.getElementById('docPreview');
+  prev.style.display='block';
+  prev.textContent=text;
+
+  // Copy button
+  const bg=document.getElementById('docGenerator');
+  if(!bg.querySelector('.copy-btn')){
+    const btn=document.createElement('button');
+    btn.className='btn btn-secondary copy-btn';
+    btn.textContent='Копировать текст';
+    btn.onclick=()=>{navigator.clipboard.writeText(text).then(()=>notify('Скопировано!'))};
+    bg.querySelector('.btn-group').appendChild(btn);
+  }
+}
+
+// LINKS
+function renderLinks(){
+  const links=S('links')||[];
+  const filter=document.getElementById('linksFilter');
+  filter.innerHTML=`<button class="filter-btn${linksFilter==='all'?' active':''}" onclick="linksFilter='all';renderLinks()">Все</button>`+
+    PROJECTS.map(p=>`<button class="filter-btn${linksFilter===p.id?' active':''}" onclick="linksFilter='${p.id}';renderLinks()"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${p.color};margin-right:5px;vertical-align:2px"></span>${p.name}</button>`).join('');
+
+  const filtered=linksFilter==='all'?links:links.filter(l=>l.project===linksFilter);
+  const grid=document.getElementById('linksGrid');
+
+  if(!filtered.length){grid.innerHTML='<div class="empty" style="grid-column:1/-1"><p>Ссылок нет</p></div>';return;}
+  grid.innerHTML=filtered.map(l=>`
+    <div class="link-card">
+      <div class="link-favicon">${l.favicon||'🔗'}</div>
+      <div class="link-info">
+        <div class="link-title"><a href="${l.url}" style="color:inherit;text-decoration:none">${l.title||l.url}</a></div>
+        <div class="link-url">${l.url}</div>
+        ${l.project?`<span class="link-project">${pname(l.project)}</span>`:''}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
+        <button class="link-del" onclick="editLink('${l.id}')" title="Редактировать" style="color:var(--text3)">✎</button>
+        <button class="link-del" onclick="deleteLink('${l.id}')" title="Удалить">✕</button>
+      </div>
+    </div>
+  `).join('');
+
+  // Fill project select
+  const sel=document.getElementById('linkProject');
+  if(sel&&sel.options.length<=1){
+    PROJECTS.forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;sel.appendChild(o)});
+  }
+}
+function addLink(){
+  const url=document.getElementById('linkUrl').value.trim();
+  if(!url)return;
+  const title=document.getElementById('linkTitle').value.trim()||url;
+  const project=document.getElementById('linkProject').value;
+  const emojis={'vk.com':'📘','facebook':'📘','instagram':'📸','google':'📊','notion':'📝','telegram':'✈️','tiktok':'🎵','youtube':'▶️','figma':'🎨','analytics':'📈','ads':'🎯'};
+  let favicon='🔗';
+  for(const[k,v] of Object.entries(emojis)){if(url.toLowerCase().includes(k)){favicon=v;break;}}
+  const links=S('links')||[];
+  links.unshift({id:uid(),url:url.startsWith('http')?url:'https://'+url,title,project,favicon});
+  S('links',links);
+  document.getElementById('linkUrl').value='';
+  document.getElementById('linkTitle').value='';
+  renderLinks();notify('Ссылка добавлена');
+}
+function deleteLink(id){S('links',(S('links')||[]).filter(l=>l.id!==id));renderLinks();}
+function editLink(id){
+  const links=S('links')||[];
+  const l=links.find(l=>l.id===id);
+  if(!l)return;
+  const opts='<option value="">Без проекта</option>'+PROJECTS.map(p=>'<option value="'+p.id+'"'+(l.project===p.id?' selected':'')+'>'+p.name+'</option>').join('');
+  document.getElementById('modalContent').innerHTML=`
+    <h3>Редактировать ссылку</h3>
+    <div class="form-group"><label class="form-label">Название</label><input class="form-control" id="eLinkTitle" value="${l.title||''}"></div>
+    <div class="form-group"><label class="form-label">URL</label><input class="form-control" id="eLinkUrl" value="${l.url||''}"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Проект</label><select class="form-control" id="eLinkProj">${opts}</select></div>
+      <div class="form-group"><label class="form-label">Иконка (эмодзи)</label><input class="form-control" id="eLinkIcon" value="${l.favicon||'🔗'}"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Отмена</button>
+      <button class="btn btn-primary" onclick="saveLink('`+id+`')">Сохранить</button>
+    </div>
+  `;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function saveLink(id){
+  const links=S('links')||[];
+  const l=links.find(l=>l.id===id);
+  if(l){
+    l.title=document.getElementById('eLinkTitle').value.trim()||l.url;
+    l.url=document.getElementById('eLinkUrl').value.trim();
+    l.project=document.getElementById('eLinkProj').value;
+    l.favicon=document.getElementById('eLinkIcon').value.trim()||'🔗';
+    S('links',links);
+  }
+  closeModal();renderLinks();notify('Ссылка обновлена');
+}
+
+// REMINDERS
+function renderReminders(){
+  const reminders=S('reminders')||[];
+  const now=new Date();
+  const list=document.getElementById('remindersList');
+
+  if(!reminders.length){list.innerHTML='<div class="empty"><p>Напоминаний нет</p></div>';return;}
+
+  list.innerHTML=reminders.sort((a,b)=>new Date(a.date+'T'+a.time)-new Date(b.date+'T'+b.time)).map(r=>{
+    const dt=new Date(r.date+'T'+(r.time||'00:00'));
+    const isPast=dt<now;
+    const dateStr=dt.toLocaleDateString('ru-RU',{day:'numeric',month:'long'})+' в '+r.time;
+    return `<div class="remind-item${isPast?' fired':''}">
+      <div class="remind-icon ${isPast?'fire':'bell'}">
+        ${isPast?`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2a10 10 0 1 0 10 10 10 10 0 0 0-10-10zm0 14v-4m0-4h.01"/></svg>`:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`}
+      </div>
+      <div class="remind-text">
+        <div class="remind-title">${r.text}</div>
+        <div class="remind-when">${dateStr}${isPast?' · Прошло':''}</div>
+      </div>
+      <button class="remind-del" onclick="deleteReminder('${r.id}')">✕</button>
+    </div>`;
+  }).join('');
+
+  // Set today's date as default
+  document.getElementById('remindDate').value=todayStr();
+}
+function addReminder(){
+  const text=document.getElementById('remindText').value.trim();
+  const date=document.getElementById('remindDate').value;
+  const time=document.getElementById('remindTime').value;
+  if(!text||!date){notify('Введите текст и дату');return;}
+  const reminders=S('reminders')||[];
+  reminders.push({id:uid(),text,date,time:time||'09:00',fired:false});
+  S('reminders',reminders);
+  document.getElementById('remindText').value='';
+  document.getElementById('remindTime').value='';
+  renderReminders();notify('Напоминание добавлено');
+}
+function deleteReminder(id){S('reminders',(S('reminders')||[]).filter(r=>r.id!==id));renderReminders();}
+
+function closeModal(){document.getElementById('modalOverlay').classList.remove('open')}
+
+// INIT
+initData();
+setDate();
+updateMonthLabel();
+renderOverview();
+setInterval(setDate,60000);
+</script>
+</body>
+</html>
