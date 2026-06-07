@@ -1771,7 +1771,8 @@ ${pendingList||'все задачи выполнены'}
 ПРАВИЛА:
 - Отвечай кратко и по делу, на русском языке
 - Суммы всегда в тенге (₸)
-- Никогда не отказывайся добавлять задачи — ты умеешь это делать`;
+- Никогда не отказывайся добавлять задачи — ты умеешь это делать
+- ВАЖНО: JSON пиши БЕЗ markdown-блоков (без тройных кавычек ```), просто голый JSON`;
 }
 
 async function sendAI(){
@@ -1823,30 +1824,42 @@ async function sendAI(){
 
     // Парсим action если есть
     try{
-      const jsonMatch=reply.match(/\{[\s\S]*?"action"[\s\S]*?\}/);
-      if(jsonMatch){
-        const action=JSON.parse(jsonMatch[0]);
-        if(action.action==='add_tasks'&&action.tasks&&action.tasks.length){
-          const tasks=S('tasks')||[];
-          let added=0;
-          action.tasks.forEach(t=>{
-            const projId=PROJECTS.find(p=>p.id===t.project||p.name.toLowerCase().includes((t.project||'').toLowerCase()))?.id||(PROJECTS[0]?.id||'');
-            if(!projId)return;
-            tasks.unshift({id:uid(),project:projId,text:t.text,done:false,
-              priority:t.priority||'normal',time:t.time||'',
-              repeat:false,created:todayStr(),dueDate:todayStr()});
-            added++;
-          });
-          S('tasks',tasks);
-          if(currentPage==='tasks')renderTasks();
-          if(currentPage==='overview')renderOverview();
-          const cleanReply=reply.replace(/\{[\s\S]*?\}/,'').trim();
-          addAIMsg('assistant',(cleanReply||`Добавил ${added} задач${added===1?'у':added<5?'и':''} ✓`));
-          notify(`Добавлено задач: ${added}`);
-          btn.disabled=false;return;
+      // Убираем markdown-обёртку ```json ... ```
+      const stripped=reply.replace(/```json\s*/gi,'').replace(/```/g,'');
+      // Ищем JSON объект — находим первую { и берём до конца строки ищем валидный JSON
+      const start=stripped.indexOf('{"action"');
+      if(start!==-1){
+        // Находим правильное закрытие JSON (считаем скобки)
+        let depth=0, end=-1;
+        for(let i=start;i<stripped.length;i++){
+          if(stripped[i]==='{')depth++;
+          else if(stripped[i]==='}'){depth--;if(depth===0){end=i;break;}}
+        }
+        if(end!==-1){
+          const jsonStr=stripped.slice(start,end+1);
+          const action=JSON.parse(jsonStr);
+          if(action.action==='add_tasks'&&action.tasks&&action.tasks.length){
+            const tasks=S('tasks')||[];
+            let added=0;
+            action.tasks.forEach(t=>{
+              const projId=PROJECTS.find(p=>p.id===t.project||p.name.toLowerCase().includes((t.project||'').toLowerCase()))?.id||(PROJECTS[0]?.id||'');
+              if(!projId)return;
+              tasks.unshift({id:uid(),project:projId,text:t.text,done:false,
+                priority:t.priority||'normal',time:t.time||'',
+                repeat:false,created:todayStr(),dueDate:todayStr()});
+              added++;
+            });
+            S('tasks',tasks);
+            if(currentPage==='tasks')renderTasks();
+            if(currentPage==='overview')renderOverview();
+            const cleanReply=reply.replace(/```json[\s\S]*?```/g,'').replace(/\{[\s\S]*?\}/s,'').trim();
+            addAIMsg('assistant',(cleanReply||`Добавил ${added} задач${added===1?'у':added<5?'и':''} ✓`));
+            notify(`Добавлено задач: ${added}`);
+            btn.disabled=false;return;
+          }
         }
       }
-    }catch(e){}
+    }catch(e){console.log('JSON parse error:',e);}
 
     addAIMsg('assistant',reply);
   }catch(e){
